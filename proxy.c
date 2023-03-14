@@ -142,6 +142,7 @@ setup_proxy_connection(int conn) {
 	int addrlen = 0;
 	unsigned char *addr = buffer;
 
+	memset(buffer, 0, 16);
 	ret = recv(conn, buffer, sizeof(buffer), MSG_PEEK);
 	if (ret < 0) return -1;
 	/* Extract the domain name from the packet */
@@ -149,6 +150,7 @@ setup_proxy_connection(int conn) {
 	addr += from_varint(addr, NULL);
 	addr += from_varint(addr, NULL);
 	addr += from_varint(addr, &addrlen);
+	if (addrlen > 255) addrlen = 255;
 	addr[addrlen] = '\0';
 
 	for (size_t i = 0; i < ARRAYLEN(servers); ++i) {
