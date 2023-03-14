@@ -1,0 +1,9 @@
+/* Default port to listen on */
+static uint16_t proxy_port = 25565;
+/* Whether to log incoming connections by default */
+int vflag = 0;
+/* List of servers to forward connections to */
+struct ForwardRule const servers[] = {
+	/* Domain name               Forward to            Port */
+	{  "example.org",            "example.com",        25000 },
+};
