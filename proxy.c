@@ -102,7 +102,7 @@ accept_connection(int fd) {
 	char source_ip[17] = {0};
 	uint16_t source_port = ntohs(sa.sin_port);
 	if (inet_ntop(AF_INET, &sa.sin_addr, source_ip, sizeof(source_ip)))
-	_log("New connection from %s:%hu", source_ip, source_port);
+		_log("New connection from %s:%hu", source_ip, source_port);
 	return ret;
 }
 int
@@ -220,7 +220,7 @@ main(int argc, const char *argv[]) {
 				}
 			}
 		}
-		for (int i = 0, n = 0; (ret > 0) && i < nclients; ++i) {
+		for (int i = 0, n = 0; ret > 0 && i < nclients; ++i) {
 			/* Client -> server */
 			if (fds[1+2*i].revents) ret -= 1;
 			if (fds[1+2*i].revents & POLLIN) {
