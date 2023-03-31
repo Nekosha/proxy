@@ -11,6 +11,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <poll.h>
+#include <signal.h>
 
 #include "varnum.h"
 #include "debug.h"
@@ -86,6 +87,8 @@ setup() {
 	/* Start monitoring for incoming connections */
 	fds[0].fd = proxy;
 	fds[0].events = POLLIN;
+	/* Don't die when trying to send to a closed connection */
+	signal(SIGPIPE, SIG_IGN);
 }
 int
 accept_connection(int fd) {
