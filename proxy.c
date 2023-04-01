@@ -208,19 +208,17 @@ main(int argc, const char *argv[]) {
 			die("run(): poll:");
 		}
 		if (fds[0].revents) ret -= 1;
-		if (nclients < MAX_CLIENTS) {
-			if (fds[0].revents & POLLIN) {
-				int clientfd = accept_connection(proxy);
-				int serverfd = setup_proxy_connection(clientfd);
-				if (serverfd < 0) {
-					shutdown(clientfd, SHUT_RDWR);
-					close(clientfd);
-				} else {
-					clients[nclients].clientfd = fds[1+2*nclients].fd = clientfd;
-					clients[nclients].serverfd = fds[1+2*nclients+1].fd = serverfd;
-					fds[1+2*nclients].events = fds[1+2*nclients+1].events = POLLIN;
-					nclients += 1;
-				}
+		if (fds[0].revents & POLLIN && nclients < MAX_CLIENTS) {
+			int clientfd = accept_connection(proxy);
+			int serverfd = setup_proxy_connection(clientfd);
+			if (serverfd < 0) {
+				shutdown(clientfd, SHUT_RDWR);
+				close(clientfd);
+			} else {
+				clients[nclients].clientfd = fds[1+2*nclients].fd = clientfd;
+				clients[nclients].serverfd = fds[1+2*nclients+1].fd = serverfd;
+				fds[1+2*nclients].events = fds[1+2*nclients+1].events = POLLIN;
+				nclients += 1;
 			}
 		}
 		for (int i = 0, n = 0; ret > 0 && i < nclients; ++i) {
