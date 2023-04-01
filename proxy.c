@@ -246,8 +246,9 @@ main(int argc, const char *argv[]) {
 					close(clients[i].serverfd);
 				}
 			}
-			/* Skip closed connections */
-			if (fds[1+2*i].revents & POLLNVAL) {
+			/* Skip this connection if either end has disconnected */
+			if ((fds[1+2*i]  .revents & POLLNVAL) ||
+			    (fds[1+2*i+1].revents & POLLNVAL)) {
 				/* Truncate the list if there are no more */
 				if (i == nclients - 1) nclients = n;
 				continue;
