@@ -225,8 +225,7 @@ main(int argc, const char *argv[]) {
 			/* Client -> server */
 			if (fds[1+2*i].revents) ret -= 1;
 			if (fds[1+2*i].revents & POLLIN) {
-				ret = relay_data(clients[i].clientfd, clients[i].serverfd);
-				if (ret < 0) {
+				if (relay_data(clients[i].clientfd, clients[i].serverfd) < 0) {
 					shutdown(clients[i].clientfd, SHUT_RDWR);
 					shutdown(clients[i].serverfd, SHUT_RDWR);
 					close(clients[i].clientfd);
@@ -236,8 +235,7 @@ main(int argc, const char *argv[]) {
 			/* Server -> client */
 			if (fds[1+2*i+1].revents) ret -= 1;
 			if (fds[1+2*i+1].revents & POLLIN) {
-				ret = relay_data(clients[i].serverfd, clients[i].clientfd);
-				if (ret < 0) {
+				if (relay_data(clients[i].serverfd, clients[i].clientfd) < 0) {
 					shutdown(clients[i].clientfd, SHUT_RDWR);
 					shutdown(clients[i].serverfd, SHUT_RDWR);
 					close(clients[i].clientfd);
