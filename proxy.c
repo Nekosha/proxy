@@ -103,7 +103,6 @@ accept_connection(int fd) {
 		return -1;
 	}
 	listen(proxy, MAX_CLIENTS - nclients);
-	fcntl(ret, F_SETFL, O_NONBLOCK);
 	char source_ip[17] = {0};
 	uint16_t source_port = ntohs(sa.sin_port);
 	if (inet_ntop(AF_INET, &sa.sin_addr, source_ip, sizeof(source_ip)))
@@ -160,6 +159,7 @@ setup_proxy_connection(int conn) {
 	if (addrlen > 255) addrlen = 255;
 	addr[addrlen] = '\0';
 
+	fcntl(conn, F_SETFL, O_NONBLOCK);
 	for (size_t i = 0; i < ARRAYLEN(servers); ++i) {
 		if (!strcmp((char*)addr, servers[i].domain)) {
 			if (server_addrs[i].sin_family == AF_UNSPEC) {
@@ -178,7 +178,7 @@ setup_proxy_connection(int conn) {
 				_log("Server %s is unreachable", addr);
 				return -1;
 			}
-			fcntl(ret, F_SETFL, O_NONBLOCK);
+			fcntl(conn, F_SETFL, O_NONBLOCK);
 			_log("Will relay connection to server %s", addr);
 			return conn;
 		}
