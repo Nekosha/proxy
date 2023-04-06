@@ -214,6 +214,7 @@ main(int argc, const char *argv[]) {
 			int clientfd = accept_connection(proxy);
 			int serverfd = setup_proxy_connection(clientfd);
 			if (serverfd < 0) {
+				/* TODO: Display a message to clients when the server is unreachable? */
 				shutdown(clientfd, SHUT_RDWR);
 				close(clientfd);
 			} else {
