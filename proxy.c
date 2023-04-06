@@ -102,7 +102,6 @@ accept_connection(int fd) {
 		if (errno == EINTR || errno == ECONNABORTED) continue;
 		return -1;
 	}
-	listen(proxy, MAX_CLIENTS - nclients);
 	char source_ip[17] = {0};
 	uint16_t source_port = ntohs(sa.sin_port);
 	if (inet_ntop(AF_INET, &sa.sin_addr, source_ip, sizeof(source_ip)))
