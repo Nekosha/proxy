@@ -172,12 +172,13 @@ setup_proxy_connection(int conn) {
 					return -1;
 				}
 			}
-			conn = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
+			conn = socket(AF_INET, SOCK_STREAM, 0);
 			ret = connect(conn, (struct sockaddr *)&server_addrs[i], sizeof(server_addrs[i]));
 			if (ret < 0) {
 				_log("Server %s is unreachable", addr);
 				return -1;
 			}
+			fcntl(ret, F_SETFL, O_NONBLOCK);
 			_log("Will relay connection to server %s", addr);
 			return conn;
 		}
