@@ -117,12 +117,14 @@ relay_data(int sender, int receiver) {
 	int ret;
 	unsigned char *sendp = buffer;
 	received = recv(sender, buffer, sizeof(buffer), 0);
-	if (received <= 0)
+	if (received <= 0) {
+		if (errno == EINTR || errno == EAGAIN) return 0;
 		return -1;
+	}
 	while (received > 0) {
 		ret = send(receiver, sendp, received, 0);
 		if (ret <= 0) {
-			if (errno == EINTR) continue;
+			if (errno == EINTR || errno == EAGAIN) continue;
 			return -1;
 		}
 		received -= ret;
@@ -170,7 +172,7 @@ setup_proxy_connection(int conn) {
 					return -1;
 				}
 			}
-			conn = socket(AF_INET, SOCK_STREAM, SOCK_NONBLOCK);
+			conn = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
 			ret = connect(conn, (struct sockaddr *)&server_addrs[i], sizeof(server_addrs[i]));
 			if (ret < 0) {
 				_log("Server %s is unreachable", addr);
