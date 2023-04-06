@@ -12,6 +12,7 @@
 #include <netdb.h>
 #include <poll.h>
 #include <signal.h>
+#include <fcntl.h>
 
 #include "varnum.h"
 #include "debug.h"
@@ -102,6 +103,7 @@ accept_connection(int fd) {
 		return -1;
 	}
 	listen(proxy, MAX_CLIENTS - nclients);
+	fcntl(ret, F_SETFL, O_NONBLOCK);
 	char source_ip[17] = {0};
 	uint16_t source_port = ntohs(sa.sin_port);
 	if (inet_ntop(AF_INET, &sa.sin_addr, source_ip, sizeof(source_ip)))
@@ -168,7 +170,7 @@ setup_proxy_connection(int conn) {
 					return -1;
 				}
 			}
-			conn = socket(AF_INET, SOCK_STREAM, 0);
+			conn = socket(AF_INET, SOCK_STREAM, SOCK_NONBLOCK);
 			ret = connect(conn, (struct sockaddr *)&server_addrs[i], sizeof(server_addrs[i]));
 			if (ret < 0) {
 				_log("Server %s is unreachable", addr);
