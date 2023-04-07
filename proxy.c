@@ -27,10 +27,10 @@ struct ForwardRule {
 struct sockaddr_in server_addrs[ARRAYLEN(servers)];
 
 #define MAX_CLIENTS 20
-struct ClientConnection {
+struct Connection {
 	int clientfd;
 	int serverfd;
-} clients[MAX_CLIENTS];
+} connections[MAX_CLIENTS];
 int nclients;
 
 int proxy;
@@ -58,9 +58,9 @@ void
 cleanup() {
 	close(proxy);
 	for (int i = 0; i < nclients; ++i) {
-		close(clients[i].clientfd);
-		shutdown(clients[i].serverfd, SHUT_RDWR);
-		close(clients[i].serverfd);
+		close(connections[i].clientfd);
+		shutdown(connections[i].serverfd, SHUT_RDWR);
+		close(connections[i].serverfd);
 	}
 }
 void
@@ -220,44 +220,44 @@ main(int argc, const char *argv[]) {
 				shutdown(clientfd, SHUT_RDWR);
 				close(clientfd);
 			} else {
-				clients[nclients].clientfd = fds[1+2*nclients].fd = clientfd;
-				clients[nclients].serverfd = fds[1+2*nclients+1].fd = serverfd;
+				connections[nclients].clientfd = fds[1+2*nclients].fd = clientfd;
+				connections[nclients].serverfd = fds[1+2*nclients+1].fd = serverfd;
 				fds[1+2*nclients].events = fds[1+2*nclients+1].events = POLLIN;
 				nclients += 1;
 			}
 		}
 		for (int i = 0, n = 0; ret > 0 && i < nclients; ++i) {
+			int client = 1+2*i, server = 1+2*i+1;
 			/* Client -> server */
-			if (fds[1+2*i].revents) ret -= 1;
-			if (fds[1+2*i].revents & POLLIN) {
-				if (relay_data(clients[i].clientfd, clients[i].serverfd) < 0) {
-					shutdown(clients[i].clientfd, SHUT_RDWR);
-					shutdown(clients[i].serverfd, SHUT_RDWR);
-					close(clients[i].clientfd);
-					close(clients[i].serverfd);
-				}
+			if (fds[client].revents) ret -= 1;
+			if (fds[client].revents & (POLLERR | POLLHUP) ||
+			    ((fds[client].revents & POLLIN) &&
+			     (relay_data(connections[i].clientfd, connections[i].serverfd) < 0))) {
+				shutdown(connections[i].clientfd, SHUT_RDWR);
+				shutdown(connections[i].serverfd, SHUT_RDWR);
+				close(connections[i].clientfd);
+				close(connections[i].serverfd);
 			}
 			/* Server -> client */
-			if (fds[1+2*i+1].revents) ret -= 1;
-			if (fds[1+2*i+1].revents & POLLIN) {
-				if (relay_data(clients[i].serverfd, clients[i].clientfd) < 0) {
-					shutdown(clients[i].clientfd, SHUT_RDWR);
-					shutdown(clients[i].serverfd, SHUT_RDWR);
-					close(clients[i].clientfd);
-					close(clients[i].serverfd);
-				}
+			if (fds[server].revents) ret -= 1;
+			if (fds[server].revents & (POLLERR | POLLHUP) ||
+			    ((fds[server].revents & POLLIN) &&
+			     (relay_data(connections[i].serverfd, connections[i].clientfd) < 0))) {
+				shutdown(connections[i].clientfd, SHUT_RDWR);
+				shutdown(connections[i].serverfd, SHUT_RDWR);
+				close(connections[i].clientfd);
+				close(connections[i].serverfd);
 			}
-			/* Skip this connection if either end has disconnected */
-			if ((fds[1+2*i]  .revents & POLLNVAL) ||
-			    (fds[1+2*i+1].revents & POLLNVAL)) {
+			/* Skip this connection if we have closed it earlier */
+			if ((fds[client].revents & POLLNVAL) ||
+			    (fds[server].revents & POLLNVAL)) {
 				/* Truncate the list if there are no more */
 				if (i == nclients - 1) nclients = n;
 				continue;
 			}
-			fds[1+2*n].fd   = fds[1+2*i].fd;
-			fds[1+2*n+1].fd = fds[1+2*i+1].fd;
-			clients[n]      = clients[i];
-			fds[1+2*n+1].fd = fds[1+2*i+1].fd;
+			fds[1+2*n].fd   = fds[client].fd;
+			fds[1+2*n+1].fd = fds[server].fd;
+			connections[n]  = connections[i];
 			n += 1;
 			/* TODO: Rotate fds to balance requests */
 		}
