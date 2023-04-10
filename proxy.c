@@ -112,22 +112,21 @@ int
 relay_data(int sender, int receiver) {
 	static unsigned char buffer[8192];
 	int received;
-	int ret;
-	unsigned char *sendp = buffer;
-	received = recv(sender, buffer, sizeof(buffer), 0);
+	int sent;
+	received = recv(sender, buffer, sizeof(buffer), MSG_PEEK);
 	if (received <= 0) {
 		if (errno == EINTR || errno == EAGAIN) return 0;
 		return -1;
 	}
-	while (received > 0) {
-		ret = send(receiver, sendp, received, 0);
-		if (ret <= 0) {
-			if (errno == EINTR || errno == EAGAIN) continue;
-			return -1;
-		}
-		received -= ret;
-		sendp += ret;
+	sent = send(receiver, buffer, received, 0);
+	if (sent <= 0) {
+		if (errno == EINTR || errno == EAGAIN) return 0;
+		return -1;
 	}
+	do {
+		received = recv(sender, buffer, sent, 0);
+		if (received < 0 && errno != EINTR) return -1; // UNLIKELY
+	} while (received < 0);
 	return 0;
 }
 int
