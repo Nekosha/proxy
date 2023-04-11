@@ -174,6 +174,7 @@ setup_proxy_connection(int conn) {
 			ret = connect(conn, (struct sockaddr *)&server_addrs[i], sizeof(server_addrs[i]));
 			if (ret < 0) {
 				_log("Server %s is unreachable", addr);
+				close(conn);
 				return -1;
 			}
 			fcntl(conn, F_SETFL, O_NONBLOCK);
